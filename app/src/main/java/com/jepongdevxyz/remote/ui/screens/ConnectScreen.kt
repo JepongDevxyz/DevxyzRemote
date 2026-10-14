@@ -111,7 +111,7 @@ fun ConnectScreen(navController: NavController) {
                 OutlinedTextField(
                     value = idText,
                     onValueChange = { idText = DeviceIdManager.formatInput(it) },
-                    label = { Text("Device ID") },
+                    label = { Text("Enter Device ID") },
                     placeholder = { Text("DEVXYZ-XXXX-XXXX") },
                     singleLine = true,
                     isError = showError,
@@ -154,7 +154,20 @@ fun ConnectScreen(navController: NavController) {
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    items(listOf("1","2","3","4","5","6","7","8","9","0")) { digit ->
+                    items(
+                        listOf(
+                            "1" to "",
+                            "2" to "ABC",
+                            "3" to "DEF",
+                            "4" to "GHI",
+                            "5" to "JKL",
+                            "6" to "MNO",
+                            "7" to "PQRS",
+                            "8" to "TUV",
+                            "9" to "WXYZ",
+                            "0" to "+"
+                        )
+                    ) { (digit, sub) ->
                         Surface(
                             onClick = { idText = DeviceIdManager.formatInput(idText + digit) },
                             shape = CircleShape,
@@ -162,7 +175,16 @@ fun ConnectScreen(navController: NavController) {
                             modifier = Modifier.aspectRatio(1.6f)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Text(digit, style = MaterialTheme.typography.headlineSmall)
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(digit, style = MaterialTheme.typography.headlineSmall)
+                                    if (sub.isNotEmpty()) {
+                                        Text(
+                                            sub,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
                             }
                         }
                     }

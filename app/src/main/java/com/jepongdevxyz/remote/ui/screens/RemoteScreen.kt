@@ -2,6 +2,7 @@ package com.jepongdevxyz.remote.ui.screens
 
 import android.content.Context
 import android.media.AudioManager
+import android.media.ToneGenerator
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -28,6 +30,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.CallEnd
 import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.Dialpad
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Keyboard
@@ -294,21 +297,21 @@ fun RemoteScreen(navController: NavController) {
             )
         }
 
-        // ---- bottom toolbar ----
+        // ---- right-edge vertical toolbar ----
         Column(
             Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 20.dp),
+                .align(Alignment.CenterEnd)
+                .padding(end = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Surface(
                 shape = RoundedCornerShape(28.dp),
                 color = Color(0xFF0B1D33).copy(alpha = 0.92f)
             ) {
-                Row(
-                    Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(2.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                Column(
+                    Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     ToolButton(Icons.Filled.Keyboard, "Keyboard") { showKeyboard = true }
                     ToolButton(Icons.Filled.ArrowBack, "Back") {
@@ -332,7 +335,15 @@ fun RemoteScreen(navController: NavController) {
                     }
                 }
             }
-            Spacer(Modifier.height(8.dp))
+        }
+
+        // ---- bottom status ----
+        Column(
+            Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     if (trackpad) "Trackpad" else "Touch",
@@ -376,6 +387,90 @@ private fun CanvasCursor(cursor: Offset) {
         drawCircle(Neon, radius = 14f, center = Offset(x, y))
         drawCircle(Color.White, radius = 5f, center = Offset(x, y))
     }
+}
+
+@Composable
+private fun DialpadDialog(onDismiss: () -> Unit) {
+    val toneGen = remember {
+        try {
+            ToneGenerator(AudioManager.STREAM_VOICE_CALL, 80)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    fun dtmf(c: Char) {
+        val tone = when (c) {
+            '1' -> ToneGenerator.TONE_DTMF_1
+            '2' -> ToneGenerator.TONE_DTMF_2
+            '3' -> ToneGenerator.TONE_DTMF_3
+            '4' -> ToneGenerator.TONE_DTMF_4
+            '5' -> ToneGenerator.TONE_DTMF_5
+            '6' -> ToneGenerator.TONE_DTMF_6
+            '7' -> ToneGenerator.TONE_DTMF_7
+            '8' -> ToneGenerator.TONE_DTMF_8
+            '9' -> ToneGenerator.TONE_DTMF_9
+            '0' -> ToneGenerator.TONE_DTMF_0
+            '*' -> ToneGenerator.TONE_DTMF_S
+            '#' -> ToneGenerator.TONE_DTMF_P
+            else -> return
+        }
+        try {
+            toneGen?.startTone(tone, 150)
+        } catch (e: Exception) {
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = {
+            try { toneGen?.release() } catch (e: Exception) {}
+            onDismiss()
+        },
+        title = { Text("Dialpad") },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                listOf(
+                    listOf('1', '2', '3'),
+                    listOf('4', '5', '6'),
+                    listOf('7', '8', '9'),
+                    listOf('*', '0', '#')
+                ).forEach { row ->
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        row.forEach { c ->
+                            Surface(
+                                onClick = { dtmf(c) },
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .aspectRatio(1f)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        c.toString(),
+                                        style = MaterialTheme.typography.headlineSmall
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                try { toneGen?.release() } catch (e: Exception) {}
+                onDismiss()
+            }) { Text("Close") }
+        }
+    )
 }
 
 @Composable
@@ -506,6 +601,28 @@ private fun VoiceOverlay(onDismiss: () -> Unit) {
                             )
                         }
                         Text("Speaker", style = MaterialTheme.typography.labelSmall)
+                    }
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        var showDialpad by remember { mutableStateOf(false) }
+                        if (showDialpad) {
+                            DialpadDialog(onDismiss = { showDialpad = false })
+                        }
+                        IconButton(
+                            onClick = { showDialpad = true },
+                            modifier = Modifier
+                                .size(56.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceVariant,
+                                    CircleShape
+                                )
+                        ) {
+                            Icon(
+                                Icons.Filled.Dialpad,
+                                contentDescription = "Dialpad",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Text("Dialpad", style = MaterialTheme.typography.labelSmall)
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         IconButton(

@@ -9,6 +9,7 @@ import android.webkit.MimeTypeMap
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,27 +17,39 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material.icons.filled.AudioFile
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.InsertDriveFile
+import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -134,37 +147,124 @@ fun FilesScreen(navController: NavController) {
                 )
                 return@Column
             }
-            PillButton(
-                text = "Send file",
-                onClick = { picker.launch("*/*") },
-                enabled = filesAllowed,
-                modifier = Modifier.fillMaxWidth()
-            )
-            if (!filesAllowed) {
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    "File transfer wasn't granted for this session.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+            var tab by remember { mutableStateOf(0) }
+            TabRow(selectedTabIndex = tab) {
+                Tab(
+                    selected = tab == 0,
+                    onClick = { tab = 0 },
+                    text = { Text("Send Files") }
+                )
+                Tab(
+                    selected = tab == 1,
+                    onClick = { tab = 1 },
+                    text = { Text("Receive Files") }
                 )
             }
             Spacer(Modifier.height(16.dp))
-            if (transfers.isEmpty()) {
-                EmptyState(
-                    icon = Icons.Filled.AttachFile,
-                    title = "No transfers yet",
-                    subtitle = "Files you send or receive in this session will appear here."
-                )
+            if (tab == 0) {
+                // ---- send tab ----
+                if (!filesAllowed) {
+                    Text(
+                        "File transfer wasn't granted for this session.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    SendCategoryRow(
+                        label = "Images",
+                        icon = Icons.Filled.Image,
+                        onClick = { picker.launch("image/*") }
+                    )
+                    SendCategoryRow(
+                        label = "Videos",
+                        icon = Icons.Filled.VideoLibrary,
+                        onClick = { picker.launch("video/*") }
+                    )
+                    SendCategoryRow(
+                        label = "Audio",
+                        icon = Icons.Filled.AudioFile,
+                        onClick = { picker.launch("audio/*") }
+                    )
+                    SendCategoryRow(
+                        label = "Documents",
+                        icon = Icons.Filled.Description,
+                        onClick = { picker.launch("*/*") }
+                    )
+                    SendCategoryRow(
+                        label = "Apps",
+                        icon = Icons.Filled.Apps,
+                        onClick = { picker.launch("application/vnd.android.package-archive") }
+                    )
+                }
+                Spacer(Modifier.height(16.dp))
+                val outgoing = transfers.filter { !it.incoming }
+                if (outgoing.isNotEmpty()) {
+                    Text(
+                        "Sending",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    LazyColumn {
+                        items(outgoing, key = { it.id }) { t ->
+                            TransferRow(t, onOpen = { openReceivedFile(ctx, it) })
+                            Spacer(Modifier.height(8.dp))
+                        }
+                    }
+                }
             } else {
-                LazyColumn {
-                    items(transfers, key = { it.id }) { t ->
-                        TransferRow(t, onOpen = { openReceivedFile(ctx, it) })
-                        Spacer(Modifier.height(8.dp))
+                // ---- receive tab ----
+                val incoming = transfers.filter { it.incoming }
+                if (incoming.isEmpty()) {
+                    EmptyState(
+                        icon = Icons.Filled.Download,
+                        title = "No received files",
+                        subtitle = "Files sent to you in this session will appear here."
+                    )
+                } else {
+                    LazyColumn {
+                        items(incoming, key = { it.id }) { t ->
+                            TransferRow(t, onOpen = { openReceivedFile(ctx, it) })
+                            Spacer(Modifier.height(8.dp))
+                        }
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun SendCategoryRow(
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onClick: () -> Unit
+) {
+    AppCard {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.clickable(onClick = onClick)
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(28.dp)
+            )
+            Spacer(Modifier.width(16.dp))
+            Text(
+                label,
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.weight(1f)
+            )
+            Icon(
+                Icons.Filled.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+    Spacer(Modifier.height(8.dp))
 }
 
 @Composable
@@ -188,8 +288,10 @@ private fun TransferRow(t: FileTransferProgress, onOpen: (String) -> Unit) {
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(t.name, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
+                val pct = (progress * 100).toInt()
                 Text(
-                    "${if (t.incoming) "Received" else "Sent"} • ${formatBytes(t.transferred)} / ${formatBytes(t.size)}",
+                    if (!t.done && !t.failed) "Sending… $pct%"
+                    else "${if (t.incoming) "Received" else "Sent"} • ${formatBytes(t.transferred)} / ${formatBytes(t.size)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

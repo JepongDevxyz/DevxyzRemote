@@ -3,8 +3,10 @@ package com.jepongdevxyz.remote.ui.screens
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,14 +22,17 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -57,6 +62,7 @@ import com.jepongdevxyz.remote.ui.theme.Muted
 import com.jepongdevxyz.remote.ui.theme.Neon
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(navController: NavController) {
     val ctx = LocalContext.current
@@ -74,7 +80,10 @@ fun HomeScreen(navController: NavController) {
         QrDialog(deviceId = deviceId, onDismiss = { showQr = false })
     }
 
-    Scaffold(bottomBar = { BottomNav(navController) }) { padding ->
+    Scaffold(
+        topBar = { TopAppBar(title = { Text("DevxyzRemote") }) },
+        bottomBar = { BottomNav(navController) }
+    ) { padding ->
         Column(
             Modifier
                 .fillMaxSize()
@@ -118,7 +127,7 @@ fun HomeScreen(navController: NavController) {
                 }
             }
 
-            SectionHeader("Your device")
+            SectionHeader("Your Device ID")
             // ---- device id ----
             AppCard {
                 Text(
@@ -128,7 +137,7 @@ fun HomeScreen(navController: NavController) {
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    deviceId.ifEmpty { "…" },
+                    DeviceIdManager.formatInput(deviceId).ifEmpty { "…" },
                     fontFamily = FontFamily.Monospace,
                     fontSize = 20.sp,
                     color = Neon
@@ -145,26 +154,94 @@ fun HomeScreen(navController: NavController) {
                     IconButton(onClick = { showQr = true }) {
                         Icon(Icons.Filled.QrCode, contentDescription = "Show QR code")
                     }
-                    IconButton(onClick = { showQr = true }) {
+                    IconButton(onClick = {
+                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(
+                                Intent.EXTRA_TEXT,
+                                "Connect to me on DevxyzRemote: $deviceId"
+                            )
+                        }
+                        ctx.startActivity(Intent.createChooser(shareIntent, "Share Device ID"))
+                    }) {
                         Icon(Icons.Filled.Share, contentDescription = "Share device ID")
                     }
                 }
             }
 
             Spacer(Modifier.height(24.dp))
-            PillButton(
-                text = "Remote Control",
-                onClick = { navController.navigate(Routes.CONNECT) },
-                modifier = Modifier.fillMaxWidth()
-            )
+            // ---- poster cards ----
+            AppCard {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.clickable { navController.navigate(Routes.CONNECT) }
+                ) {
+                    Box(
+                        Modifier
+                            .size(48.dp)
+                            .background(
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Filled.Share,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(26.dp)
+                        )
+                    }
+                    Spacer(Modifier.width(16.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            "Remote Control",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            "Tap to connect to another device",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
             Spacer(Modifier.height(12.dp))
-            PillButton(
-                text = "Share My ID",
-                onClick = { showQr = true },
-                modifier = Modifier.fillMaxWidth(),
-                container = MaterialTheme.colorScheme.surfaceVariant,
-                content = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            AppCard {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.clickable { showQr = true }
+                ) {
+                    Box(
+                        Modifier
+                            .size(48.dp)
+                            .background(
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Filled.MyLocation,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(26.dp)
+                        )
+                    }
+                    Spacer(Modifier.width(16.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            "Share ID",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            "Let others connect to your device",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
             Spacer(Modifier.height(16.dp))
         }
     }
