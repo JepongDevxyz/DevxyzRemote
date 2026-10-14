@@ -113,7 +113,9 @@ class CaptureService : Service() {
                 }
             )
             this.capturer = capturer
-            rtc.startCapture(capturer, captureWidth, captureHeight, captureFps)
+            // The video track was prepared before SDP negotiation (so the
+            // m-line exists); just attach the capturer to start frames.
+            rtc.attachCapturer(capturer, captureWidth, captureHeight, captureFps)
         } catch (e: Exception) {
             stopSelf()
         }

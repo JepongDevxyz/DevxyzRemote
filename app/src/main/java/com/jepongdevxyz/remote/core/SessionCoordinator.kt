@@ -115,7 +115,13 @@ object SessionCoordinator {
         } catch (e: Exception) {
             Build.MODEL
         }
-        val sig = FirebaseSignaling(deviceName)
+        val sig = try {
+            FirebaseSignaling(deviceName)
+        } catch (e: Exception) {
+            // Firebase classes are bundled but not initialized (no
+            // google-services.json) — signaling simply isn't available.
+            return@withLock null
+        }
         sig.setListener(masterListener())
         sig.connect(localId)
         onlineSignaling = sig
@@ -257,7 +263,13 @@ object SessionCoordinator {
     fun acceptIncoming(context: Context, resultCode: Int, data: Intent?, granted: Set<RemotePermission>) {
         scope.launch {
             val app = ensureInit(context)
-            val pending = pendingOffer ?: run {
+            // Atomic check-and-clear: a second tap while the first is still
+            // running must not create a second RtcManager.
+            val pending = synchronized(this@SessionCoordinator) {
+                val p = pendingOffer
+                pendingOffer = null
+                p
+            } ?: run {
                 _state.value = SessionState.Failed("The incoming call expired.")
                 return@launch
             }
@@ -275,7 +287,6 @@ object SessionCoordinator {
                     SessionState.Failed("Signaling unavailable — this build was installed without Firebase configured.")
                 return@launch
             }
-            pendingOffer = null
             lastGranted = granted
             currentPeerId = pending.from
             endRtcOnly()
@@ -292,6 +303,9 @@ object SessionCoordinator {
             CaptureService.captureWidth = w
             CaptureService.captureHeight = h
             CaptureService.captureFps = fps
+            // The video track MUST exist before createAnswer so the SDP
+            // includes the video m-line (otherwise the controller gets black).
+            rtc.prepareVideoTrack()
             try {
                 val answer = rtc.createAnswer(pending.sdp)
                 sig.sendAnswer(pending.from, answer)
@@ -373,6 +387,7 @@ object SessionCoordinator {
         dialFallbackJob?.cancel()
         endRtcOnly()
         currentPeerId = ""
+        pendingLoopbackCapture = false
         _state.value = SessionState.Failed(reason)
     }
 
@@ -450,9 +465,14 @@ object SessionCoordinator {
      * immediately with role CONTROLLER.
      */
     fun startLoopbackTest(context: Context) {
+        // Arm synchronously BEFORE the coroutine starts: onLoopbackCaptureResult
+        // may arrive while the coroutine is still setting up (no delay-guessing).
+        pendingLoopbackCapture = true
         scope.launch {
             val app = ensureInit(context)
             endSessionInternal()
+            // endSessionInternal cleared the flag; re-arm now that setup runs.
+            pendingLoopbackCapture = true
 
             val localId = DeviceIdManager.getDeviceId(app)
             val deviceName = try {
@@ -550,6 +570,9 @@ object SessionCoordinator {
             sigA.connect(localId)
             sigB.connect(localId)
             pendingLoopbackCapture = true
+            // The sharing side's video track MUST exist before the offer so
+            // the SDP includes the video m-line (otherwise black screen).
+            rtcB.prepareVideoTrack()
             try {
                 val offer = rtcA.createOffer()
                 sigA.sendOffer(localId, offer)
@@ -569,8 +592,10 @@ object SessionCoordinator {
         pendingLoopbackCapture = false
         val app = appCtx ?: return
         if (resultCode != Activity.RESULT_OK || data == null) {
-            scope.launch { endSessionInternal() }
-            _state.value = SessionState.Failed("Screen capture permission was denied.")
+            scope.launch {
+                endSessionInternal()
+                _state.value = SessionState.Failed("Screen capture permission was denied.")
+            }
             return
         }
         CaptureService.start(app, resultCode, data)

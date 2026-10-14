@@ -308,16 +308,56 @@ internal class RtcManager(private val appContext: Context) {
     /** Starts screen capture into a new video track added to the connection. */
     fun startCapture(capturer: VideoCapturer, width: Int, height: Int, fps: Int) {
         stopCapture()
-        val helper = SurfaceTextureHelper.create("devxyz-capture", eglBase.eglBaseContext)
-        captureHelper = helper
-        val source = factory.createVideoSource(capturer.isScreencast)
-        videoSource = source
-        this.capturer = capturer
-        capturer.initialize(helper, appContext, source.capturerObserver)
-        capturer.startCapture(width, height, fps)
-        videoTrack = factory.createVideoTrack("devxyz-video", source)
-        peerConnection?.addTrack(videoTrack, listOf("devxyz-screen"))
-        applyQualityBitrate()
+        prepareVideoTrack()
+        attachCapturer(capturer, width, height, fps)
+    }
+
+    /**
+     * Creates the video source + track and adds it to the PeerConnection.
+     * MUST be called before createOffer/createAnswer so the SDP includes the
+     * video m-line. The track stays black until [attachCapturer] wires a
+     * real capturer — no renegotiation needed.
+     */
+    fun prepareVideoTrack() {
+        if (videoTrack != null) return
+        try {
+            val pc = ensurePeerConnection()
+            val helper = SurfaceTextureHelper.create("devxyz-capture", eglBase.eglBaseContext)
+            captureHelper = helper
+            val source = factory.createVideoSource(false)
+            videoSource = source
+            videoTrack = factory.createVideoTrack("devxyz-video", source)
+            pc.addTrack(videoTrack, listOf("devxyz-screen"))
+            applyQualityBitrate()
+        } catch (e: Exception) {
+        }
+    }
+
+    /** True once [prepareVideoTrack] has added the track. */
+    val hasVideoTrack: Boolean get() = videoTrack != null
+
+    /**
+     * Attaches a capturer to the prepared video source and starts capture.
+     * Call after [prepareVideoTrack] (or standalone — it prepares first).
+     */
+    fun attachCapturer(capturer: VideoCapturer, width: Int, height: Int, fps: Int) {
+        try {
+            if (videoTrack == null) prepareVideoTrack()
+            val source = videoSource ?: return
+            val helper = captureHelper ?: return
+            try {
+                this.capturer?.stopCapture()
+            } catch (e: Exception) {
+            }
+            try {
+                this.capturer?.dispose()
+            } catch (e: Exception) {
+            }
+            this.capturer = capturer
+            capturer.initialize(helper, appContext, source.capturerObserver)
+            capturer.startCapture(width, height, fps)
+        } catch (e: Exception) {
+        }
     }
 
     fun stopCapture() {

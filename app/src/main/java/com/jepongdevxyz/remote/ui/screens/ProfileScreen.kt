@@ -65,16 +65,13 @@ fun ProfileScreen(navController: NavController) {
     val mpm = remember {
         ctx.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
     }
-    // Loopback self-test: startLoopbackTest arms the pipeline, then the
-    // capture result is forwarded once the internal coroutine has armed it.
+    // Loopback self-test: startLoopbackTest arms synchronously, so the
+    // capture result can be forwarded immediately — no delay-guessing.
     val loopLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        scope.launch {
-            SessionCoordinator.startLoopbackTest(ctx)
-            delay(800)
-            SessionCoordinator.onLoopbackCaptureResult(result.resultCode, result.data)
-        }
+        SessionCoordinator.startLoopbackTest(ctx)
+        SessionCoordinator.onLoopbackCaptureResult(result.resultCode, result.data)
     }
 
     LaunchedEffect(nameSavedTick) { /* refresh trigger */ }

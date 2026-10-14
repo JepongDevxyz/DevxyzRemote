@@ -10,12 +10,15 @@ import android.content.Context
 object Backend {
 
     /**
-     * True when Firebase is on the classpath (i.e. google-services.json was
-     * packaged correctly and the Firebase SDK initialized).
+     * True when Firebase is on the classpath AND initialized (i.e.
+     * google-services.json was packaged correctly). Checking the class alone
+     * is not enough — the SDK is bundled even without configuration.
      */
     fun hasFirebase(context: Context): Boolean {
         return try {
-            Class.forName("com.google.firebase.FirebaseApp")
+            val clazz = Class.forName("com.google.firebase.FirebaseApp")
+            // Throws IllegalStateException when not initialized.
+            clazz.getMethod("getInstance").invoke(null)
             true
         } catch (e: Exception) {
             false
