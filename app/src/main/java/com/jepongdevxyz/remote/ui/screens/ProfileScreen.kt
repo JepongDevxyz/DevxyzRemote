@@ -1,7 +1,7 @@
 package com.jepongdevxyz.remote.ui.screens
 
 import android.content.Context
-import android.media.MediaProjectionManager
+import android.media.projection.MediaProjectionManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable

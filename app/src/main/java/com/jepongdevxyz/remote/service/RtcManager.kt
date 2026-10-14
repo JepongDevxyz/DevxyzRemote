@@ -24,6 +24,7 @@ import org.webrtc.MediaStream
 import org.webrtc.MediaStreamTrack
 import org.webrtc.PeerConnection
 import org.webrtc.PeerConnectionFactory
+import org.webrtc.RTCStatsCollectorCallback
 import org.webrtc.RTCStatsReport
 import org.webrtc.RtpReceiver
 import org.webrtc.SdpObserver
@@ -468,7 +469,11 @@ internal class RtcManager(private val appContext: Context) {
                 delay(2000)
                 try {
                     val pc = peerConnection ?: continue
-                    pc.getStats({ report -> extractRttMs(report)?.let { _rttMs.value = it } }, null)
+                    pc.getStats(object : RTCStatsCollectorCallback {
+                        override fun onStatsDelivered(report: RTCStatsReport) {
+                            extractRttMs(report)?.let { _rttMs.value = it }
+                        }
+                    })
                 } catch (e: Exception) {
                 }
             }
