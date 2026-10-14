@@ -75,9 +75,10 @@ What was verified instead:
   shapes checked against their public sources).
 
 Most likely build-time risks to watch:
-- `org.webrtc:google-webrtc:1.0.32006` — if Gradle can't resolve it, bump to a newer
-  1.0.x from Maven Central; `RtcManager` uses only stable APIs (PeerConnectionFactory,
-  ScreenCapturerAndroid, DataChannel, getStats).
+- WebRTC: `org.webrtc:google-webrtc` is NOT published on Maven Central — the
+  project uses the community build `io.github.webrtc-sdk:android` (same
+  `org.webrtc.*` Java API, official source). Pinned version in
+  `gradle/libs.versions.toml`; bump to the latest release there if needed.
 - KSP + Room: keep `ksp` plugin version aligned with Kotlin (2.0.21-1.0.25).
 - `CaptureService` uses `ScreenCapturerAndroid(Intent, MediaProjection.Callback)`
   (the real constructor — it builds its own MediaProjection/VirtualDisplay).
