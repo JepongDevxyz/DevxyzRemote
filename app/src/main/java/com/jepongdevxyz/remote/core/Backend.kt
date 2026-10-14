@@ -10,16 +10,13 @@ import android.content.Context
 object Backend {
 
     /**
-     * True when Firebase is on the classpath AND a FirebaseApp is
-     * initialized (i.e. google-services.json was packaged correctly).
+     * True when Firebase is on the classpath (i.e. google-services.json was
+     * packaged correctly and the Firebase SDK initialized).
      */
     fun hasFirebase(context: Context): Boolean {
         return try {
-            val clazz = Class.forName("com.google.firebase.FirebaseApp")
-            val getApps = clazz.getMethod("getApps", Context::class.java)
-            @Suppress("UNCHECKED_CAST")
-            val apps = getApps.invoke(null, context.applicationContext) as? List<*>
-            !apps.isNullOrEmpty()
+            Class.forName("com.google.firebase.FirebaseApp")
+            true
         } catch (e: Exception) {
             false
         }
