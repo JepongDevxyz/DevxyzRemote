@@ -112,7 +112,7 @@ object SessionCoordinator {
         val localId = DeviceIdManager.getDeviceId(app)
         val deviceName = try {
             Prefs.deviceName.first()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             Build.MODEL
         }
         val sig = FirebaseSignaling(deviceName)
@@ -132,14 +132,14 @@ object SessionCoordinator {
                         repository?.upsertDevice(
                             DeviceEntity(from, fromName.ifBlank { from }, System.currentTimeMillis())
                         )
-                    } catch (_: Exception) {
+                    } catch (e: Exception) {
                     }
                 }
             } else {
                 // Busy — politely decline so the caller doesn't hang.
                 try {
                     onlineSignaling?.sendAnswer(from, "")
-                } catch (_: Exception) {
+                } catch (e: Exception) {
                 }
             }
         }
@@ -155,7 +155,7 @@ object SessionCoordinator {
             scope.launch {
                 try {
                     rtc.setRemoteAnswer(sdp)
-                } catch (_: Exception) {
+                } catch (e: Exception) {
                     failDial("Failed to establish the connection")
                 }
             }
@@ -209,7 +209,7 @@ object SessionCoordinator {
             wireRtc(rtc, sendIce = { cand ->
                 try {
                     sig.sendIce(target, cand)
-                } catch (_: Exception) {
+                } catch (e: Exception) {
                 }
             })
             _state.value = SessionState.Dialing(target)
@@ -238,7 +238,7 @@ object SessionCoordinator {
             try {
                 // Empty answer = decline; the caller surfaces it immediately.
                 onlineSignaling?.sendAnswer(pending.from, "")
-            } catch (_: Exception) {
+            } catch (e: Exception) {
             }
         }
         if (_state.value is SessionState.Incoming) {
@@ -266,7 +266,7 @@ object SessionCoordinator {
                 pendingOffer = null
                 try {
                     onlineSignaling?.sendAnswer(pending.from, "")
-                } catch (_: Exception) {
+                } catch (e: Exception) {
                 }
                 return@launch
             }
@@ -285,7 +285,7 @@ object SessionCoordinator {
             wireRtc(rtc, sendIce = { cand ->
                 try {
                     sig.sendIce(pending.from, cand)
-                } catch (_: Exception) {
+                } catch (e: Exception) {
                 }
             })
             val (w, h, fps) = captureDimsFor(app)
@@ -317,13 +317,13 @@ object SessionCoordinator {
         dialFallbackJob?.cancel()
         try {
             activeRtc?.sendControl(Protocol.bye())
-        } catch (_: Exception) {
+        } catch (e: Exception) {
         }
         if (_state.value is SessionState.Dialing) {
             // Never connected: tell the callee to stop ringing (empty answer).
             try {
                 onlineSignaling?.sendAnswer(currentPeerId, "")
-            } catch (_: Exception) {
+            } catch (e: Exception) {
             }
         }
         fileTx.failAll()
@@ -335,12 +335,12 @@ object SessionCoordinator {
                 val sec = ((System.currentTimeMillis() - sessionStartMs) / 1000).coerceAtLeast(0)
                 repository?.updateSessionDuration(sid, sec)
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
         }
         endRtcOnly()
         try {
             appCtx?.let { CaptureService.stop(it) }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
         }
         currentSessionId = null
         sessionStartMs = 0L
@@ -356,13 +356,13 @@ object SessionCoordinator {
         rttJob = null
         try {
             activeRtc?.close()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
         }
         activeRtc = null
         sharingRtc = null
         try {
             loopbackRtcB?.close()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
         }
         loopbackRtcB = null
     }
@@ -381,14 +381,14 @@ object SessionCoordinator {
     fun attachRemoteRenderer(view: SurfaceViewRenderer) {
         try {
             activeRtc?.attachRenderer(view)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
         }
     }
 
     fun detachRemoteRenderer() {
         try {
             activeRtc?.detachRenderer()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
         }
     }
 
@@ -411,7 +411,7 @@ object SessionCoordinator {
         scope.launch(Dispatchers.IO) {
             try {
                 repository?.insertMessage(MessageEntity(sessionId = sid, text = clean, ts = ts, mine = true))
-            } catch (_: Exception) {
+            } catch (e: Exception) {
             }
         }
     }
@@ -419,7 +419,7 @@ object SessionCoordinator {
     fun setMicrophoneEnabled(enabled: Boolean) {
         try {
             activeRtc?.setMicrophoneEnabled(enabled)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
         }
     }
 
@@ -457,7 +457,7 @@ object SessionCoordinator {
             val localId = DeviceIdManager.getDeviceId(app)
             val deviceName = try {
                 Prefs.deviceName.first()
-            } catch (_: Exception) {
+            } catch (e: Exception) {
                 Build.MODEL
             }
 
@@ -478,7 +478,7 @@ object SessionCoordinator {
             wireRtc(rtcA, sendIce = { cand ->
                 try {
                     sigA.sendIce(localId, cand)
-                } catch (_: Exception) {
+                } catch (e: Exception) {
                 }
             })
             wireRtc(
@@ -486,7 +486,7 @@ object SessionCoordinator {
                 sendIce = { cand ->
                     try {
                         sigB.sendIce(localId, cand)
-                    } catch (_: Exception) {
+                    } catch (e: Exception) {
                     }
                 },
                 // Controlled half announces its screen as soon as the
@@ -501,7 +501,7 @@ object SessionCoordinator {
                     scope.launch {
                         try {
                             rtcA.setRemoteAnswer(sdp)
-                        } catch (_: Exception) {
+                        } catch (e: Exception) {
                         }
                     }
                 }
@@ -518,7 +518,7 @@ object SessionCoordinator {
                         try {
                             val answer = rtcB.createAnswer(sdp)
                             sigB.sendAnswer(from, answer)
-                        } catch (_: Exception) {
+                        } catch (e: Exception) {
                         }
                     }
                 }
@@ -590,7 +590,7 @@ object SessionCoordinator {
         fileTx.appContext = context.applicationContext
         return try {
             fileTx.sendFile(context.applicationContext, uri, name, size, mime)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             null
         }
     }
@@ -606,7 +606,7 @@ object SessionCoordinator {
         rtc.onIceCandidate = { cand ->
             try {
                 sendIce(cand)
-            } catch (_: Exception) {
+            } catch (e: Exception) {
             }
         }
         rtc.onDataChannelMessage = { _, text -> handleDataMessage(text) }
@@ -672,7 +672,7 @@ object SessionCoordinator {
             sessionStartMs = System.currentTimeMillis()
             try {
                 repository?.upsertDevice(DeviceEntity(peerId, peerName, System.currentTimeMillis()))
-            } catch (_: Exception) {
+            } catch (e: Exception) {
             }
             _state.value = SessionState.Active(
                 sessionId = sid,
@@ -689,7 +689,7 @@ object SessionCoordinator {
         val metrics = app.resources.displayMetrics
         val name = try {
             Prefs.deviceName.first()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             Build.MODEL
         }
         val hello = Protocol.hello(metrics.widthPixels, metrics.heightPixels, metrics.densityDpi, name)
@@ -710,7 +710,7 @@ object SessionCoordinator {
                     direction = direction
                 )
             ) ?: 0L
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             0L
         }
     }
@@ -720,7 +720,7 @@ object SessionCoordinator {
         val quality = withTimeoutOrNull(2000) {
             try {
                 Prefs.quality.first()
-            } catch (_: Exception) {
+            } catch (e: Exception) {
                 Prefs.cachedQuality
             }
         } ?: Prefs.cachedQuality
@@ -740,7 +740,7 @@ object SessionCoordinator {
     private fun handleDataMessage(text: String) {
         val msg = try {
             Protocol.parse(text)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             return
         }
         when (msg["t"] as? String) {
@@ -763,7 +763,7 @@ object SessionCoordinator {
                 scope.launch(Dispatchers.IO) {
                     try {
                         repository?.insertMessage(MessageEntity(sessionId = sid, text = v, ts = ts, mine = false))
-                    } catch (_: Exception) {
+                    } catch (e: Exception) {
                     }
                 }
             }

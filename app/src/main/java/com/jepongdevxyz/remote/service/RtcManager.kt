@@ -224,7 +224,7 @@ internal class RtcManager(private val appContext: Context) {
         } else {
             try {
                 pc.addIceCandidate(ice)
-            } catch (_: Exception) {
+            } catch (e: Exception) {
             }
         }
     }
@@ -238,7 +238,7 @@ internal class RtcManager(private val appContext: Context) {
         queued.forEach {
             try {
                 pc.addIceCandidate(it)
-            } catch (_: Exception) {
+            } catch (e: Exception) {
             }
         }
     }
@@ -279,7 +279,7 @@ internal class RtcManager(private val appContext: Context) {
                     buffer.data.get(bytes)
                     val text = String(bytes, Charsets.UTF_8)
                     onDataChannelMessage?.invoke(dc.label(), text)
-                } catch (_: Exception) {
+                } catch (e: Exception) {
                 }
             }
         })
@@ -291,7 +291,7 @@ internal class RtcManager(private val appContext: Context) {
             if (channel.state() != DataChannel.State.OPEN) return false
             val bytes = text.toByteArray(Charsets.UTF_8)
             channel.send(DataChannel.Buffer(ByteBuffer.wrap(bytes), false))
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             false
         }
     }
@@ -322,11 +322,11 @@ internal class RtcManager(private val appContext: Context) {
     fun stopCapture() {
         try {
             capturer?.stopCapture()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
         }
         try {
             capturer?.dispose()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
         }
         capturer = null
         try {
@@ -337,7 +337,7 @@ internal class RtcManager(private val appContext: Context) {
                     peerConnection?.removeTrack(sender)
                 }
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
         }
         videoTrack = null
         videoSource?.dispose()
@@ -349,7 +349,7 @@ internal class RtcManager(private val appContext: Context) {
     fun setMicrophoneEnabled(enabled: Boolean) {
         try {
             audioTrack?.setEnabled(enabled)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
         }
     }
 
@@ -372,7 +372,7 @@ internal class RtcManager(private val appContext: Context) {
                     sender.parameters = params
                 }
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
         }
     }
 
@@ -381,7 +381,7 @@ internal class RtcManager(private val appContext: Context) {
             view.init(eglBase.eglBaseContext, null)
             renderer = view
             remoteVideoTrack?.addSink(view)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
         }
     }
 
@@ -392,7 +392,7 @@ internal class RtcManager(private val appContext: Context) {
                 remoteVideoTrack?.removeSink(view)
                 view.release()
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
         }
         renderer = null
     }
@@ -432,7 +432,7 @@ internal class RtcManager(private val appContext: Context) {
                     renderer?.let {
                         try {
                             track.addSink(it)
-                        } catch (_: Exception) {
+                        } catch (e: Exception) {
                         }
                     }
                 }
@@ -453,7 +453,7 @@ internal class RtcManager(private val appContext: Context) {
             val audioSource = factory.createAudioSource(MediaConstraints())
             audioTrack = factory.createAudioTrack("devxyz-audio", audioSource)
             pc.addTrack(audioTrack, listOf("devxyz-stream"))
-        } catch (_: Exception) {
+        } catch (e: Exception) {
         }
 
         peerConnection = pc
@@ -469,7 +469,7 @@ internal class RtcManager(private val appContext: Context) {
                 try {
                     val pc = peerConnection ?: continue
                     pc.getStats({ report -> extractRttMs(report)?.let { _rttMs.value = it } }, null)
-                } catch (_: Exception) {
+                } catch (e: Exception) {
                 }
             }
         }
@@ -497,12 +497,12 @@ internal class RtcManager(private val appContext: Context) {
         try {
             controlDc?.close()
             controlDc?.dispose()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
         }
         try {
             fileDc?.close()
             fileDc?.dispose()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
         }
         controlDc = null
         fileDc = null
@@ -510,28 +510,28 @@ internal class RtcManager(private val appContext: Context) {
             remoteVideoTrack?.let { track ->
                 renderer?.let { track.removeSink(it) }
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
         }
         remoteVideoTrack = null
         renderer = null
         try {
             audioTrack?.dispose()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
         }
         audioTrack = null
         try {
             peerConnection?.close()
             peerConnection?.dispose()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
         }
         peerConnection = null
         try {
             factory.dispose()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
         }
         try {
             eglBase.release()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
         }
     }
 }

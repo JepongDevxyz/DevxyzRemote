@@ -20,7 +20,7 @@ object Backend {
             @Suppress("UNCHECKED_CAST")
             val apps = getApps.invoke(null, context.applicationContext) as? List<*>
             !apps.isNullOrEmpty()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             false
         }
     }

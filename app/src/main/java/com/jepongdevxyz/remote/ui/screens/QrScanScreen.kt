@@ -66,7 +66,7 @@ private class QrAnalyzer(private val onQr: (String) -> Unit) : ImageAnalysis.Ana
             )
             val result = reader.decode(BinaryBitmap(HybridBinarizer(source)))
             onQr(result.text)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             // no QR in this frame
         } finally {
             image.close()

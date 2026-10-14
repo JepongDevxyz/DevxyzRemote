@@ -95,7 +95,7 @@ object Prefs {
         init(c)
         cachedQuality = try {
             quality.first()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             "1080p"
         }
     }

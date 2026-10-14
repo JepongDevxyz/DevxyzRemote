@@ -120,12 +120,12 @@ internal class FileTransferManager(
                     throw IllegalStateException("not all chunks were acknowledged")
                 }
                 publish(FileTransferProgress(id, name, size, size, done = true, failed = false, incoming = false, savedPath = null))
-            } catch (_: Exception) {
+            } catch (e: Exception) {
                 publish(FileTransferProgress(id, name, size, og.acked.size.toLong() * CHUNK_SIZE, done = false, failed = true, incoming = false, savedPath = null))
             } finally {
                 try {
                     og.input.close()
-                } catch (_: Exception) {
+                } catch (e: Exception) {
                 }
                 synchronized(outgoing) { outgoing.remove(id) }
             }
@@ -137,7 +137,7 @@ internal class FileTransferManager(
     fun onMessage(json: String) {
         val msg = try {
             Protocol.parse(json)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             return
         }
         when (msg["t"] as? String) {
@@ -178,7 +178,7 @@ internal class FileTransferManager(
                 )
                 send(Protocol.fack(id, seq))
                 if (inc.received >= inc.size) finalizeIncoming(inc)
-            } catch (_: Exception) {
+            } catch (e: Exception) {
                 synchronized(incoming) { incoming.remove(id) }
                 publish(FileTransferProgress(id, inc.name, inc.size, inc.received, done = false, failed = true, incoming = true, savedPath = null))
             }
@@ -213,7 +213,7 @@ internal class FileTransferManager(
                     savedPath = savedUri?.toString()
                 )
             )
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             synchronized(incoming) { incoming.remove(inc.id) }
             publish(FileTransferProgress(inc.id, inc.name, inc.size, inc.received, done = false, failed = true, incoming = true, savedPath = null))
         }
@@ -269,7 +269,7 @@ internal class FileTransferManager(
             it.job?.cancel()
             try {
                 it.input.close()
-            } catch (_: Exception) {
+            } catch (e: Exception) {
             }
         }
         synchronized(incoming) { incoming.clear() }

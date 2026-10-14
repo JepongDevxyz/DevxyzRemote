@@ -90,7 +90,7 @@ private fun openReceivedFile(ctx: Context, path: String) {
             .setDataAndType(uri, mime)
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         ctx.startActivity(Intent.createChooser(intent, "Open file"))
-    } catch (_: Exception) {
+    } catch (e: Exception) {
         Toast.makeText(ctx, "Can't open this file", Toast.LENGTH_SHORT).show()
     }
 }

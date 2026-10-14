@@ -137,7 +137,7 @@ object Protocol {
                     else -> v.toString()
                 }
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             // malformed: return what we have (possibly empty)
         }
         return out

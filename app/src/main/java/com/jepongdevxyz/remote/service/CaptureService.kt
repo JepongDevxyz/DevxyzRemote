@@ -114,7 +114,7 @@ class CaptureService : Service() {
             )
             this.capturer = capturer
             rtc.startCapture(capturer, captureWidth, captureHeight, captureFps)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             stopSelf()
         }
         return START_STICKY
@@ -123,16 +123,16 @@ class CaptureService : Service() {
     override fun onDestroy() {
         try {
             capturer?.stopCapture()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
         }
         try {
             capturer?.dispose()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
         }
         capturer = null
         try {
             stopForeground(STOP_FOREGROUND_REMOVE)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
         }
         super.onDestroy()
     }
