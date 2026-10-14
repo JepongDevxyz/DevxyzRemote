@@ -1,0 +1,23 @@
+# Gradle
+.gradle/
+build/
+**/build/
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+local.properties
+
+# Signing
+*.jks
+*.keystore
+
+# Firebase (owner adds their own)
+app/google-services.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# DevxyzIDE
+*.ap_
