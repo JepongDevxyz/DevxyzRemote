@@ -30,7 +30,7 @@ jobs:
       - name: Install Android packages
         run: |
           export ANDROID_SDK_ROOT=/usr/local/lib/android/sdk
-          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --install "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
 
       - name: Decode keystore
@@ -53,18 +53,18 @@ jobs:
         run: gradle clean
 
 
-      - name: Build debug APK
+      - name: Build release APK
         env:
           KEYSTORE_PATH: ${{ runner.temp }}/jepong-release.jks
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: gradle :app:assembleDebug --stacktrace
+        run: gradle :app:assembleRelease --stacktrace
 
 
-      - name: Upload debug APK
+      - name: Upload release APK
         uses: actions/upload-artifact@v4
         with:
-          name: DevxyzRemote-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: DevxyzRemote-release-apk
+          path: app/build/outputs/apk/release/app-release.apk
           retention-days: 14
