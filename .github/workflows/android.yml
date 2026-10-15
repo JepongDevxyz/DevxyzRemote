@@ -27,13 +27,13 @@ jobs:
           export ANDROID_SDK_ROOT=/usr/local/lib/android/sdk
           $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --install "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
+      - name: Decode keystore
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > ${{ runner.temp }}/jepong-release.jks
+
       - name: Set up Gradle 8.7
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.7"
-
-      - name: Decode keystore
-        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > ${{ runner.temp }}/jepong-release.jks
 
       - name: Build debug APK
         env:
@@ -49,3 +49,27 @@ jobs:
           name: DevxyzRemote-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           retention-days: 14
+
+  install-test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download APK
+        uses: actions/download-artifact@v4
+        with:
+          name: DevxyzRemote-debug-apk
+          path: apk
+
+      - name: Run install test on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          script: |
+            adb install apk/app-debug.apk
+            echo "INSTALL OK"
+            adb shell am start -n com.jepongdevxyz.remote/.MainActivity
+            sleep 10
+            adb shell pidof com.jepongdevxyz.remote
+            echo "LAUNCH OK"
