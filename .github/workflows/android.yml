@@ -32,7 +32,15 @@ jobs:
         with:
           gradle-version: "8.7"
 
+      - name: Decode keystore
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > ${{ runner.temp }}/jepong-release.jks
+
       - name: Build debug APK
+        env:
+          KEYSTORE_PATH: ${{ runner.temp }}/jepong-release.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: gradle :app:assembleDebug --stacktrace
 
       - name: Upload debug APK
