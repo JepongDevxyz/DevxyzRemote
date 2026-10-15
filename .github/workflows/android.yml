@@ -25,7 +25,7 @@ jobs:
       - name: Install Android packages
         run: |
           export ANDROID_SDK_ROOT=/usr/local/lib/android/sdk
-          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --install "platform-tools" "platforms;android-36" "platforms;android-37" "build-tools;36.0.0"
+          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --install "platform-tools" "platforms;android-36" "build-tools;36.0.0"
 
       - name: Decode keystore
         run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > ${{ runner.temp }}/jepong-release.jks
