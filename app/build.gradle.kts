@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.jepongdevxyz.remote"
-    compileSdk = 37
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.jepongdevxyz.remote"
