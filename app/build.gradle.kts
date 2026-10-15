@@ -37,6 +37,12 @@ android {
         debug {
             // In CI, sign with her release keystore (KEYSTORE_PATH set by workflow).
             // Locally, falls back to the default debug key.
+            // Minify enabled to reduce 38MB DEX (install fails on large dex).
+            isMinifyEnabled = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
             System.getenv("KEYSTORE_PATH")?.takeIf { it.isNotBlank() }?.let {
                 signingConfig = signingConfigs.getByName("jepong")
             }
