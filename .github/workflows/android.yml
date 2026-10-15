@@ -1,5 +1,6 @@
 name: DevxyzRemote Android CI
 
+
 on:
   push:
     branches: [ "main" ]
@@ -7,13 +8,16 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
+
 jobs:
   build:
     runs-on: ubuntu-latest
 
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -22,18 +26,22 @@ jobs:
           java-version: "17"
           cache: gradle
 
+
       - name: Install Android packages
         run: |
           export ANDROID_SDK_ROOT=/usr/local/lib/android/sdk
           $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --install "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
+
       - name: Decode keystore
         run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > ${{ runner.temp }}/jepong-release.jks
+
 
       - name: Set up Gradle 8.7
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.7"
+
 
       - name: Build debug APK
         env:
@@ -43,12 +51,14 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: gradle :app:assembleDebug --stacktrace
 
+
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
           name: DevxyzRemote-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           retention-days: 14
+
 
   install-test:
     needs: build
@@ -60,16 +70,39 @@ jobs:
           name: DevxyzRemote-debug-apk
           path: apk
 
+
       - name: Run install test on emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 34
-          target: google_apis
+          api-level: 29
+          target: default
           arch: x86_64
+          profile: pixel_4
+          emulator-options: -no-snapshot -no-audio -no-boot-anim -camera-back none
+          disable-animations: true
           script: |
             adb install apk/app-debug.apk
-            echo "INSTALL OK"
+            echo "=== INSTALL OK ==="
             adb shell am start -n com.jepongdevxyz.remote/.MainActivity
-            sleep 10
-            adb shell pidof com.jepongdevxyz.remote
-            echo "LAUNCH OK"
+            sleep 15
+            PID=$(adb shell pidof com.jepongdevxyz.remote)
+            if [ -z "$PID" ]; then echo "LAUNCH FAILED"; exit 1; fi
+            echo "=== LAUNCH OK (PID $PID) ==="
+            adb shell screencap -p /sdcard/splash.png
+            sleep 3
+            adb shell uiautomator dump /sdcard/ui1.xml
+            adb pull /sdcard/ui1.xml /tmp/ui1.xml
+            echo "=== UI DUMP 1 (Splash/Welcome) ==="
+            grep -o 'text="[^"]*"' /tmp/ui1.xml | head -20
+            adb shell screencap -p /sdcard/screen1.png
+            adb pull /sdcard/screen1.png $GITHUB_WORKSPACE/screen1.png || true
+            echo "=== CHECKING FOR CRASHES ==="
+            adb logcat -d | grep -i "FATAL\|AndroidRuntime" | head -10 || echo "No crashes found"
+
+      - name: Upload test screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: emulator-screenshots
+          path: screen1.png
+          retention-days: 7
