@@ -10,7 +10,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.jepongdevxyz.remotetest"
+        applicationId = "com.jepongdevxyz.remote"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
