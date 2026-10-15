@@ -25,6 +25,14 @@ android {
         jvmTarget = "17"
     }
 
+    signingConfigs {
+        create("jepong") {
+            storeFile = file(System.getenv("KEYSTORE_PATH") ?: "missing.jks")
+            storePassword = System.getenv("KEYSTORE_PASSWORD")
+            keyAlias = System.getenv("KEY_ALIAS")
+            keyPassword = System.getenv("KEY_PASSWORD")
+        }
+    }
     buildTypes {
         debug {
             // In CI, sign with her release keystore (KEYSTORE_PATH set by workflow).
@@ -42,14 +50,6 @@ android {
             System.getenv("KEYSTORE_PATH")?.takeIf { it.isNotBlank() }?.let {
                 signingConfig = signingConfigs.getByName("jepong")
             }
-        }
-    }
-    signingConfigs {
-        create("jepong") {
-            storeFile = file(System.getenv("KEYSTORE_PATH") ?: "missing.jks")
-            storePassword = System.getenv("KEYSTORE_PASSWORD")
-            keyAlias = System.getenv("KEY_ALIAS")
-            keyPassword = System.getenv("KEY_PASSWORD")
         }
     }
     buildFeatures {
