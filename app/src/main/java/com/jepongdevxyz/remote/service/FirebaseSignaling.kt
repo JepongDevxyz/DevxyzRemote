@@ -27,7 +27,7 @@ class FirebaseSignaling(
 ) : Signaling {
 
     private val rooms: DatabaseReference =
-        FirebaseDatabase.getInstance().getReference("devxyzremote/v1/rooms")
+        FirebaseDatabase.getInstance("https://devxyzremote-default-rtdb.asia-southeast1.firebasedatabase.app/").getReference("devxyzremote/v1/rooms")
 
     private var localId: String? = null
     private var listener: Signaling.Listener? = null
