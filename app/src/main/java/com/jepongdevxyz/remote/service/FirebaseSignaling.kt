@@ -1,6 +1,8 @@
 package com.jepongdevxyz.remote.service
 
+
 import android.os.Build
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -8,6 +10,7 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ServerValue
 import com.google.firebase.database.ValueEventListener
+
 
 /**
  * Firebase Realtime Database signaling.
@@ -26,32 +29,41 @@ class FirebaseSignaling(
     private val deviceName: String = Build.MODEL
 ) : Signaling {
 
+
     private val rooms: DatabaseReference =
         FirebaseDatabase.getInstance("https://devxyzremote-default-rtdb.asia-southeast1.firebasedatabase.app/").getReference("devxyzremote/v1/rooms")
 
+
     private var localId: String? = null
     private var listener: Signaling.Listener? = null
+
 
     private var offerListener: ValueEventListener? = null
     private var iceListener: ChildEventListener? = null
     private var answerListener: ValueEventListener? = null
 
+
     private var peerWatchRef: DatabaseReference? = null
     private var peerWatch: ValueEventListener? = null
     private var peerWatchFirstFire = true
+
 
     private var lastOfferTs: Long = 0L
     private var offerFirstFire = true
     private var answerFirstFire = true
 
+
     override fun connect(localId: String) {
+        FirebaseCrashlytics.getInstance().log("Signaling: Connected with ID $localId")
         disconnect()
         this.localId = localId
         val room = rooms.child(localId)
 
+
         // Presence: removed automatically when this client disconnects.
         room.child("presence").setValue(true)
         room.child("presence").onDisconnect().removeValue()
+
 
         // Incoming offers. The first snapshot is skipped so a stale offer
         // left by a previous run is never re-delivered.
@@ -71,13 +83,16 @@ class FirebaseSignaling(
                 val from = map["from"] as? String ?: return
                 val fromName = (map["fromName"] as? String).orEmpty().ifBlank { from }
                 val sdp = map["sdp"] as? String ?: return
+                FirebaseCrashlytics.getInstance().log("Signaling: Received offer from $from")
                 listener?.onIncomingOffer(from, fromName, sdp)
             }
+
 
             override fun onCancelled(error: DatabaseError) {}
         }
         offerListener = offerL
         room.child("offer").addValueEventListener(offerL)
+
 
         // Incoming ICE trickle. Each child is removed after delivery so a
         // reconnect never replays old candidates.
@@ -90,11 +105,13 @@ class FirebaseSignaling(
                 listener?.onIce(candidate)
             }
 
+
             override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {}
             override fun onChildRemoved(snapshot: DataSnapshot) {}
             override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {}
             override fun onCancelled(error: DatabaseError) {}
         }.also { room.child("ice").addChildEventListener(it) }
+
 
         // Incoming answer to our offer. Removed after delivery.
         answerFirstFire = true
@@ -108,14 +125,17 @@ class FirebaseSignaling(
                 val map = snapshot.value as? Map<String, Any?> ?: return
                 val sdp = map["sdp"] as? String ?: return
                 snapshot.ref.removeValue()
+                FirebaseCrashlytics.getInstance().log("Signaling: Received answer from $from")
                 listener?.onAnswer(sdp)
             }
+
 
             override fun onCancelled(error: DatabaseError) {}
         }
         answerListener = answerL
         room.child("answer").addValueEventListener(answerL)
     }
+
 
     override fun disconnect() {
         val id = localId
@@ -134,7 +154,9 @@ class FirebaseSignaling(
         listener = null
     }
 
+
     override fun sendOffer(to: String, sdp: String) {
+        FirebaseCrashlytics.getInstance().log("Signaling: Sending offer to $to")
         val id = localId ?: return
         rooms.child(to).child("offer").setValue(
             mapOf(
@@ -147,7 +169,9 @@ class FirebaseSignaling(
         watchPeer(to)
     }
 
+
     override fun sendAnswer(to: String, sdp: String) {
+        FirebaseCrashlytics.getInstance().log("Signaling: Sending answer to $to")
         rooms.child(to).child("answer").setValue(
             mapOf("sdp" to sdp, "ts" to ServerValue.TIMESTAMP)
         )
@@ -155,13 +179,16 @@ class FirebaseSignaling(
         if (sdp.isNotBlank()) watchPeer(to)
     }
 
+
     override fun sendIce(to: String, candidate: String) {
         rooms.child(to).child("ice").push().setValue(candidate)
     }
 
+
     override fun setListener(l: Signaling.Listener?) {
         listener = l
     }
+
 
     /**
      * Fires [Signaling.Listener.onPeerGone] when the peer's presence node
@@ -186,6 +213,7 @@ class FirebaseSignaling(
                     listener?.onPeerGone()
                 }
             }
+
 
             override fun onCancelled(error: DatabaseError) {}
         }
