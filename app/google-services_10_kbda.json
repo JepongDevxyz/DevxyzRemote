@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "372402188642",
+    "project_id": "devxyzremote",
+    "storage_bucket": "devxyzremote.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:372402188642:android:9c816c74c47327eda03c3b",
+        "android_client_info": {
+          "package_name": "com.jepongdevxyz.remote"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDuu8BYvIPxXGwPMy1GdNQdER0f4VJcAVw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
