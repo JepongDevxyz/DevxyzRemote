@@ -55,7 +55,7 @@ jobs:
 
       - name: Build debug APK
         
-        run: gradle :app:assemleDebug --stacktrace
+        run: gradle :app:assembleDebug --stacktrace
 
 
       - name: Upload debug APK
