@@ -54,7 +54,11 @@ jobs:
 
 
       - name: Build debug APK
-        
+        env:
+          KEYSTORE_PATH: ${{ runner.temp }}/jepong-release.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: gradle :app:assembleDebug --stacktrace
 
 
