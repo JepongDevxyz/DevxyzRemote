@@ -125,7 +125,7 @@ class FirebaseSignaling(
                 val map = snapshot.value as? Map<String, Any?> ?: return
                 val sdp = map["sdp"] as? String ?: return
                 snapshot.ref.removeValue()
-                FirebaseCrashlytics.getInstance().log("Signaling: Received answer from $from")
+                FirebaseCrashlytics.getInstance().log("Signaling: Received answer")
                 listener?.onAnswer(sdp)
             }
 
