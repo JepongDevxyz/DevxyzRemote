@@ -7,8 +7,7 @@ plugins {
 
 android {
     namespace = "com.jepongdevxyz.remote"
-    compileSdk = 
-37
+ compileSdk = 37
     defaultConfig {
         applicationId = "com.jepongdevxyz.remote"
         minSdk = 26
