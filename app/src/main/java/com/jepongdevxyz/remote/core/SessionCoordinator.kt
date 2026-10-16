@@ -488,8 +488,8 @@ object SessionCoordinator {
             sigA.other = sigB
             sigB.other = sigA
 
-            val rtcA = try { RtcManager(app) } catch (t: Throwable) { android.util.Log.e("SessionCoordinator", "RtcManager A failed", t); throw t } // controller side
-            val rtcB = try { RtcManager(app) } catch (t: Throwable) { android.util.Log.e("SessionCoordinator", "RtcManager B failed", t); throw t } // controlled side (shares screen)
+            val rtcA = try { RtcManager(app) } catch (t: Throwable) { android.util.Log.e("SessionCoordinator", "RtcManager A failed", t); _state.value = SessionState.Failed("WebRTC init failed: " + (t.message ?: "unknown")); return@launch } // controller side
+            val rtcB = try { RtcManager(app) } catch (t: Throwable) { android.util.Log.e("SessionCoordinator", "RtcManager B failed", t); _state.value = SessionState.Failed("WebRTC init failed: " + (t.message ?: "unknown")); return@launch } // controlled side (shares screen)
             activeRtc = rtcA
             sharingRtc = rtcB
             loopbackRtcB = rtcB
