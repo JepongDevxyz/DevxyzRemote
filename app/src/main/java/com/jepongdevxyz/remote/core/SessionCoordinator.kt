@@ -314,7 +314,7 @@ object SessionCoordinator {
                 return@launch
             }
             // CaptureService pulls the sharing RtcManager via getSharingRtc().
-            CaptureService.start(app, resultCode, data)
+            try { CaptureService.start(app, resultCode, data) } catch (e: Exception) { android.util.Log.e("SessionCoordinator", "Failed to start CaptureService", e) }
             // Active is set in onRtcConnected() once the PeerConnection is up.
         }
     }
@@ -598,7 +598,7 @@ object SessionCoordinator {
             }
             return
         }
-        CaptureService.start(app, resultCode, data)
+        try { CaptureService.start(app, resultCode, data) } catch (e: Exception) { android.util.Log.e("SessionCoordinator", "Failed to start CaptureService", e) }
     }
 
     // ------------------------------------------------------------ files
