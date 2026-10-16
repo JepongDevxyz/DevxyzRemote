@@ -88,7 +88,10 @@ class FirebaseSignaling(
             }
 
 
-            override fun onCancelled(error: DatabaseError) {}
+            override fun onCancelled(error: DatabaseError) {
+                android.util.Log.e("FirebaseSignaling", "Firebase error: " + error.message)
+                try { com.google.firebase.crashlytics.FirebaseCrashlytics.getInstance().log("Firebase onCancelled: " + error.message) } catch (_: Throwable) {}
+            }
         }
         offerListener = offerL
         room.child("offer").addValueEventListener(offerL)
@@ -109,7 +112,10 @@ class FirebaseSignaling(
             override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {}
             override fun onChildRemoved(snapshot: DataSnapshot) {}
             override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {}
-            override fun onCancelled(error: DatabaseError) {}
+            override fun onCancelled(error: DatabaseError) {
+                android.util.Log.e("FirebaseSignaling", "Firebase error: " + error.message)
+                try { com.google.firebase.crashlytics.FirebaseCrashlytics.getInstance().log("Firebase onCancelled: " + error.message) } catch (_: Throwable) {}
+            }
         }.also { room.child("ice").addChildEventListener(it) }
 
 
@@ -130,7 +136,10 @@ class FirebaseSignaling(
             }
 
 
-            override fun onCancelled(error: DatabaseError) {}
+            override fun onCancelled(error: DatabaseError) {
+                android.util.Log.e("FirebaseSignaling", "Firebase error: " + error.message)
+                try { com.google.firebase.crashlytics.FirebaseCrashlytics.getInstance().log("Firebase onCancelled: " + error.message) } catch (_: Throwable) {}
+            }
         }
         answerListener = answerL
         room.child("answer").addValueEventListener(answerL)
@@ -215,7 +224,10 @@ class FirebaseSignaling(
             }
 
 
-            override fun onCancelled(error: DatabaseError) {}
+            override fun onCancelled(error: DatabaseError) {
+                android.util.Log.e("FirebaseSignaling", "Firebase error: " + error.message)
+                try { com.google.firebase.crashlytics.FirebaseCrashlytics.getInstance().log("Firebase onCancelled: " + error.message) } catch (_: Throwable) {}
+            }
         }
         peerWatchRef = ref
         peerWatch = l
