@@ -67,6 +67,20 @@ class CaptureService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        createChannel()
+        val notification = buildNotification()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(
+                NOTIF_ID,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            startForeground(NOTIF_ID, notification)
+        }
+
+        
         if (intent?.action == ACTION_STOP) {
             SessionCoordinator.endSession()
             stopSelf()
@@ -87,19 +101,6 @@ class CaptureService : Service() {
         if (resultCode != Activity.RESULT_OK || data == null || rtc == null) {
             stopSelf()
             return START_NOT_STICKY
-        }
-
-        createChannel()
-        val notification = buildNotification()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(
-                NOTIF_ID,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
-            )
-        } else {
-            @Suppress("DEPRECATION")
-            startForeground(NOTIF_ID, notification)
         }
 
         try {
