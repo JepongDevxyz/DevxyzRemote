@@ -144,6 +144,11 @@ object SessionCoordinator {
                     }
                 }
             } else {
+                // Don't auto-decline duplicates of the offer we're currently handling
+                val pending = pendingOffer
+                if (pending != null && pending.from == from && pending.sdp == sdp) {
+                    return
+                }
                 // Busy — politely decline so the caller doesn't hang.
                 try {
                     onlineSignaling?.sendAnswer(from, "")
@@ -313,6 +318,9 @@ object SessionCoordinator {
                 sig.sendAnswer(pending.from, answer)
             } catch (e: Exception) {
                 _state.value = SessionState.Failed("Failed to answer: ${e.message}")
+                // Reset to Idle so future calls aren't auto-declined
+                pendingOffer = null
+                _state.value = SessionState.Idle
                 return@launch
             }
             // CaptureService pulls the sharing RtcManager via getSharingRtc().
