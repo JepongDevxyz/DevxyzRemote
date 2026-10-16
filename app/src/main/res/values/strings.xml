@@ -2,4 +2,5 @@
 <resources>
     <string name="app_name">DevxyzRemote</string>
     <string name="accessibility_service_description">DevxyzRemote uses this service to perform taps, swipes and typing on this device when you accept a remote control session.</string>
+    <string name="bind_accessibility_permission">android.permission.BIND_ACCESSIBILITY_SERVICE</string>
 </resources>
