@@ -78,6 +78,8 @@ object SessionCoordinator {
     private var lastGranted: Set<RemotePermission> = emptySet()
     private var pendingOffer: PendingOffer? = null
     private var pendingLoopbackCapture: Boolean = false
+    private var pendingResultCode: Int? = null
+    private var pendingResultData: Intent? = null
     private var dialTimeoutJob: Job? = null
     private var dialFallbackJob: Job? = null
 
@@ -468,6 +470,8 @@ object SessionCoordinator {
         // Arm synchronously BEFORE the coroutine starts: onLoopbackCaptureResult
         // may arrive while the coroutine is still setting up (no delay-guessing).
         pendingLoopbackCapture = true
+        pendingResultCode = null
+        pendingResultData = null
         scope.launch {
             val app = ensureInit(context)
             endSessionInternal()
@@ -493,6 +497,16 @@ object SessionCoordinator {
             activeRtc = rtcA
             sharingRtc = rtcB
             loopbackRtcB = rtcB
+            // Deferred CaptureService start: the permission result may have arrived
+            // while WebRTC was still initializing (first-try race). Start the service
+            // only now that sharingRtc is assigned.
+            val rc = pendingResultCode
+            val rd = pendingResultData
+            pendingResultCode = null
+            pendingResultData = null
+            if (rc != null && rd != null) {
+                try { CaptureService.start(app, rc, rd) } catch (t: Throwable) { android.util.Log.e("SessionCoordinator", "Deferred CaptureService start failed", t) }
+            }
             currentPeerId = localId
 
             wireRtc(rtcA, sendIce = { cand ->
@@ -598,7 +612,11 @@ object SessionCoordinator {
             }
             return
         }
-        try { CaptureService.start(app, resultCode, data) } catch (e: Exception) { android.util.Log.e("SessionCoordinator", "Failed to start CaptureService", e) }
+        // Stash the result; the startLoopbackTest coroutine starts CaptureService
+        // after sharingRtc is assigned (fixes the first-try race where the service
+        // saw a null sharingRtc and stopped itself).
+        pendingResultCode = resultCode
+        pendingResultData = data
     }
 
     // ------------------------------------------------------------ files
