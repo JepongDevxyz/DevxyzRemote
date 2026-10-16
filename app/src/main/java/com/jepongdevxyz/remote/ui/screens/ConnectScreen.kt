@@ -77,6 +77,8 @@ fun ConnectScreen(navController: NavController) {
         if (scanned.isNotEmpty()) {
             idText = scanned
             entry?.savedStateHandle?.set("scanned_id", "")
+            // Auto-connect after a successful QR scan (same action as the Connect button).
+            SessionCoordinator.startOutgoing(ctx, scanned)
         }
     }
 
