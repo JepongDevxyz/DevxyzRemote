@@ -7,14 +7,14 @@ plugins {
 
 android {
     namespace = "com.jepongdevxyz.remote"
-    compileSdk = 34
-
+    compileSdk = 
+37
     defaultConfig {
         applicationId = "com.jepongdevxyz.remote"
         minSdk = 26
-        targetSdk = 34
-        versionCode = 3
-        versionName = "0.1.2"
+        targetSdk = 36
+        versionCode = 4
+        versionName = "0.1.3"
         ndk {
             // arm64-only like DevxyzBrowser mobile flavor (her Honor 400 5G is arm64)
             abiFilters += listOf("arm64-v8a")
